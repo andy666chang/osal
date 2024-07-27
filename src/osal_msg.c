@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:49:38 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 00:55:06
+ * @Last Modified time: 2024-07-28 01:40:10
  */
 
 /*********************************************************************
@@ -158,41 +158,6 @@ uint8 osal_msg_deallocate( uint8 *msg_ptr )
  */
 uint8 osal_msg_send( uint8 destination_task, uint8 *msg_ptr )
 {
-#ifdef USE_ICALL
-  if (destination_task & OSAL_PROXY_ID_FLAG)
-  {
-    /* Destination is a proxy task */
-    osal_msg_hdr_t *hdr = (osal_msg_hdr_t *)msg_ptr - 1;
-    ICall_EntityID src, dst;
-
-    uint8 taskid = osal_self();
-    if (taskid == TASK_NO_TASK)
-    {
-      /* Call must have been made from either an ISR or a user-thread */
-      src = osal_notask_entity;
-    }
-    else
-    {
-      src = (ICall_EntityID) osal_dispatch_entities[taskid + tasksCnt];
-    }
-    if (src == OSAL_INVALID_DISPATCH_ID)
-    {
-      /* The source entity is not registered */
-      /* abort */
-      ICall_abort();
-      return FAILURE;
-    }
-    dst = osal_proxy2alien(destination_task);
-    hdr->dest_id = TASK_NO_TASK;
-    if (ICall_send(src, dst, ICALL_MSG_FORMAT_KEEP, msg_ptr) ==
-        ICALL_ERRNO_SUCCESS)
-    {
-      return SUCCESS;
-    }
-    osal_msg_deallocate(msg_ptr);
-    return FAILURE;
-  }
-#endif /* USE_ICALL */
   return ( osal_msg_enqueue_push( destination_task, msg_ptr, FALSE ) );
 }
 
@@ -241,13 +206,6 @@ static uint8 osal_msg_enqueue_push( uint8 destination_task, uint8 *msg_ptr, uint
   {
     return ( INVALID_MSG_POINTER );
   }
-
-#ifdef USE_ICALL
-  if (destination_task & OSAL_PROXY_ID_FLAG)
-  {
-    ICall_abort();
-  }
-#endif /* USE_ICALL */
 
   if ( destination_task >= tasksCnt )
   {

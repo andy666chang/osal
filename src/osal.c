@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:48:37 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 00:54:49
+ * @Last Modified time: 2024-07-28 01:46:15
  */
 
 /******************************************************************************
@@ -516,12 +516,7 @@ uint8 osal_init_system( void )
   osalTimerInit();
 
   // Initialize the Power Management System
-  osal_pwrmgr_init();
-
-#ifdef USE_ICALL
-  /* Prepare memory space for service enrollment */
-  osal_prepare_svc_enroll();
-#endif /* USE_ICALL */
+  // osal_pwrmgr_init();
 
   // Initialize the system tasks.
   osalInitTasks();
@@ -530,15 +525,6 @@ uint8 osal_init_system( void )
   // Setup efficient search for the first free block of heap.
   osal_mem_kick();
 #endif /* !defined USE_ICALL && !defined OSAL_PORT2TIRTOS */
-
-#ifdef USE_ICALL
-  // Initialize variables used to track timing and provide OSAL timer service
-  osal_last_timestamp = (uint_least32_t) ICall_getTicks();
-  osal_tickperiod = (uint_least32_t) ICall_getTickPeriod();
-  osal_max_msecs = (uint_least32_t) ICall_getMaxMSecs();
-  /* Reduce ceiling considering potential latency */
-  osal_max_msecs -= 2;
-#endif /* USE_ICALL */
 
   return ( SUCCESS );
 }
@@ -557,28 +543,11 @@ uint8 osal_init_system( void )
  */
 void osal_start_system( void )
 {
-#ifdef USE_ICALL
-  /* Kick off timer service in order to allocate resources upfront.
-   * The first timeout is required to schedule next OSAL timer event
-   * as well. */
-  ICall_Errno errno = ICall_setTimer(1, osal_msec_timer_cback,
-                                     (void *) osal_msec_timer_seq,
-                                     &osal_timerid_msec_timer);
-  if (errno != ICALL_ERRNO_SUCCESS)
-  {
-    ICall_abort();
-  }
-#endif /* USE_ICALL */
-
 #if !defined ( ZBIT ) && !defined ( UBIT )
   for(;;)  // Forever Loop
 #endif
   {
     osal_run_system();
-
-#ifdef USE_ICALL
-    ICall_wait(ICALL_TIMEOUT_FOREVER);
-#endif /* USE_ICALL */
   }
 }
 
@@ -600,90 +569,8 @@ void osal_run_system( void )
 {
   uint8 idx = 0;
 
-#ifdef USE_ICALL
-  uint32 next_timeout_prior = osal_next_timeout();
-#else /* USE_ICALL */
-#ifndef HAL_BOARD_CC2538
-  osalTimeUpdate();
-#endif
-
-  Hal_ProcessPoll();
-#endif /* USE_ICALL */
-
-#ifdef USE_ICALL
-  {
-    /* Update osal timers to the latest before running any OSAL processes
-     * regardless of wakeup callback from ICall because OSAL timers are added
-     * relative to the current time. */
-    unsigned long newtimestamp = ICall_getTicks();
-    uint32 milliseconds;
-
-    if (osal_tickperiod == 1000)
-    {
-      milliseconds = newtimestamp - osal_last_timestamp;
-      osal_last_timestamp = newtimestamp;
-    }
-    else
-    {
-      unsigned long long delta = (unsigned long long)
-        ((newtimestamp - osal_last_timestamp) & 0xfffffffful);
-      delta *= osal_tickperiod;
-      delta /= 1000;
-      milliseconds = (uint32) delta;
-      osal_last_timestamp += (uint32) (delta * 1000 / osal_tickperiod);
-    }
-    osalAdjustTimer(milliseconds);
-    /* Set a value that will never match osal_next_timeout()
-     * return value so that the next time can be scheduled.
-     */
-    next_timeout_prior = 0xfffffffful;
-  }
-  if (osal_eventloop_hook)
-  {
-    osal_eventloop_hook();
-  }
-
-  for (;;)
-  {
-    void *msg;
-    ICall_EntityID src, dst;
-    osal_msg_hdr_t *hdr;
-    uint8 dest_id;
-
-    if (ICall_fetchMsg(&src, &dst, &msg) != ICALL_ERRNO_SUCCESS)
-    {
-      break;
-    }
-    hdr = (osal_msg_hdr_t *) msg - 1;
-    dest_id = osal_dispatch2id(dst);
-    if (dest_id == TASK_NO_TASK)
-    {
-      /* Something wrong */
-      ICall_abort();
-    }
-    else
-    {
-      /* Message towards one of the tasks */
-      /* Create a proxy task ID if necessary and
-       * queue the message to the OSAL internal queue.
-       */
-      uint8 proxyid = osal_alien2proxy(hdr->srcentity);
-
-      if (hdr->format == ICALL_MSG_FORMAT_1ST_CHAR_TASK_ID)
-      {
-        uint8 *bytes = msg;
-        *bytes = proxyid;
-      }
-      else if (hdr->format == ICALL_MSG_FORMAT_3RD_CHAR_TASK_ID)
-      {
-        uint8 *bytes = msg;
-        bytes[2] = proxyid;
-      }
-      /* now queue the message to the OSAL queue */
-      osal_msg_send(dest_id, msg);
-    }
-  }
-#endif /* USE_ICALL */
+  // osalTimeUpdate();
+  // Hal_ProcessPoll();
 
   do {
     if (tasksEvents[idx])  // Task is highest priority that is ready.
@@ -723,48 +610,6 @@ void osal_run_system( void )
     osal_task_yield();
   }
 #endif
-
-#if defined USE_ICALL
-  /* Note that scheduling wakeup at this point instead of
-   * scheduling it upon ever OSAL start timer request,
-   * would only work if OSAL start timer call is made
-   * from OSAL tasks, but not from either ISR or
-   * non-OSAL application thread.
-   * In case, OSAL start timer is called from non-OSAL
-   * task, the scheduling should be part of OSAL_Timers
-   * module.
-   * Such a change to OSAL_Timers module was not made
-   * in order not to diverge the OSAL implementations
-   * too drastically between pure OSAL solution vs.
-   * OSAL upon service dispatcher (RTOS).
-   * TODO: reconsider the above statement.
-   */
-  {
-    halIntState_t intState;
-
-    uint32 next_timeout_post = osal_next_timeout();
-    if (next_timeout_post != next_timeout_prior)
-    {
-      /* Next wakeup time has to be scheduled */
-      if (next_timeout_post == 0)
-      {
-        /* No timer. Set time to the max */
-        next_timeout_post = OSAL_TIMERS_MAX_TIMEOUT;
-      }
-      if (next_timeout_post > osal_max_msecs)
-      {
-        next_timeout_post = osal_max_msecs;
-      }
-      /* Restart timer */
-      HAL_ENTER_CRITICAL_SECTION(intState);
-      ICall_stopTimer(osal_timerid_msec_timer);
-      ICall_setTimerMSecs(next_timeout_post, osal_msec_timer_cback,
-                          (void *) (++osal_msec_timer_seq),
-                          &osal_timerid_msec_timer);
-      HAL_EXIT_CRITICAL_SECTION(intState);
-    }
-  }
-#endif /* USE_ICALL */
 }
 
 /*********************************************************************
