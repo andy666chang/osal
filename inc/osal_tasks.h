@@ -94,13 +94,27 @@ typedef struct
  */
 typedef unsigned short (*pTaskEventHandlerFn)( unsigned char task_id, unsigned short event );
 
+#if 0
+/*
+ * OSAL task control block
+ */
+typedef struct {
+  uint8 taskID;
+  uint16 events;
+  // uint8 priority;
+  pTaskEventHandlerFn event_process;
+  struct osal_tcb_t *next;
+} osal_tcb_t;
+#endif
+
 /*********************************************************************
  * GLOBAL VARIABLES
  */
 
-extern const pTaskEventHandlerFn tasksArr[];
-extern const uint8 tasksCnt;
+extern pTaskEventHandlerFn tasksArr[];
+extern uint8 tasksCnt;
 extern uint16 *tasksEvents;
+// extern osal_tcb_t *tasks;
 
 /*********************************************************************
  * FUNCTIONS

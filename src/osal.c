@@ -98,6 +98,9 @@
  * GLOBAL VARIABLES
  */
 
+ extern uint8 activeTaskID;
+ extern osal_msg_q_t osal_qHead;
+
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
@@ -522,7 +525,7 @@ uint8 osal_init_system( void )
   // osal_pwrmgr_init();
 
   // Initialize the system tasks.
-  osalInitTasks();
+  // osalInitTasks();
 
 #if !defined USE_ICALL && !defined OSAL_PORT2TIRTOS
   // Setup efficient search for the first free block of heap.
