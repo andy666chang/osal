@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:48:37 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 01:46:15
+ * @Last Modified time: 2024-07-28 14:23:56
  */
 
 /******************************************************************************
@@ -61,27 +61,30 @@
 
 #include <string.h>
 
-#include "comdef.h"
-#include "hal_board.h"
-#include "OSAL.h"
-#include "OSAL_Tasks.h"
-#include "OSAL_Memory.h"
-#include "OSAL_PwrMgr.h"
-#include "OSAL_Clock.h"
-
-#include "OnBoard.h"
-
-/* HAL */
-#include "hal_drivers.h"
-
-#ifdef IAR_ARMCM3_LM
-  #include "FreeRTOSConfig.h"
-  #include "osal_task.h"
-#endif
+#include "type.h"
+#include "osal.h"
+#include "osal_tasks.h"
+#include "osal_memory.h"
+// #include "osal_PwrMgr.h"
+#include "osal_msg.h"
+#include "osal_clock.h"
 
 /*********************************************************************
  * MACROS
  */
+
+#define BREAK_UINT32( var, ByteNum ) \
+  (uint8)((uint32)(((var) >> ((ByteNum) * 8)) & 0x00FF))
+
+#define BUILD_UINT32(Byte0, Byte1, Byte2, Byte3) \
+  ((uint32)((uint32)((Byte0) & 0x00FF) \
+  + ((uint32)((Byte1) & 0x00FF) << 8)\
+  + ((uint32)((Byte2) & 0x00FF) << 16) \
+  + ((uint32)((Byte3) & 0x00FF) << 24)))
+
+#define BUILD_UINT16(Byte0, Byte1) \
+  ((uint16)((uint16)((Byte0) & 0x00FF) \
+  + ((uint16)((Byte1) & 0x00FF) << 8)))
 
 /*********************************************************************
  * CONSTANTS
@@ -401,7 +404,7 @@ unsigned char * _ltoa(unsigned long l, unsigned char *buf, unsigned char radix)
  */
 uint16 osal_rand( void )
 {
-  return ( Onboard_rand() );
+  return ( platform_rand() );
 }
 
 /*********************************************************************

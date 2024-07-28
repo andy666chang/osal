@@ -1,8 +1,8 @@
 /*
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:00:14 
- * @Last Modified by:   andy.chang 
- * @Last Modified time: 2024-07-28 00:00:14 
+ * @Last Modified by: andy.chang
+ * @Last Modified time: 2024-07-28 13:40:57
  */
 
 /******************************************************************************
@@ -54,6 +54,8 @@
 
 #ifndef OSAL_TIMERS_H
 #define OSAL_TIMERS_H
+
+#include "type.h"
 
 #ifdef __cplusplus
 extern "C"

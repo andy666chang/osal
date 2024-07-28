@@ -1,8 +1,8 @@
 /*
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:00:58 
- * @Last Modified by:   andy.chang 
- * @Last Modified time: 2024-07-28 00:00:58 
+ * @Last Modified by: andy.chang
+ * @Last Modified time: 2024-07-28 13:41:45
  */
 
 /******************************************************************************
@@ -54,6 +54,8 @@
 
 #ifndef OSAL_CLOCK_H
 #define OSAL_CLOCK_H
+
+#include "type.h"
 
 #ifdef __cplusplus
 extern "C"

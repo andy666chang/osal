@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-27 23:40:13 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-27 23:50:18
+ * @Last Modified time: 2024-07-28 13:42:10
  */
 
 #ifndef OSAL_MSG_H
@@ -17,11 +17,9 @@ extern "C"
  * INCLUDES
  */
 
-#include <limits.h>
-
-#include "comdef.h"
-#include "OSAL_Memory.h"
-#include "OSAL_Timers.h"
+#include "type.h"
+#include "osal_memory.h"
+#include "osal_timers.h"
 
 /*********************************************************************
  * MACROS

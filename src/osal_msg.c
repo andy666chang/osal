@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:49:38 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 01:40:10
+ * @Last Modified time: 2024-07-28 14:02:47
  */
 
 /*********************************************************************
@@ -11,15 +11,13 @@
 
 #include <string.h>
 
-#include "comdef.h"
-#include "hal_board.h"
-#include "OSAL.h"
-#include "OSAL_Tasks.h"
-#include "OSAL_Memory.h"
-#include "OSAL_PwrMgr.h"
-#include "OSAL_Clock.h"
-
-#include "OnBoard.h"
+#include "type.h"
+#include "osal.h"
+#include "osal_tasks.h"
+#include "osal_memory.h"
+// #include "osal_PwrMgr.h"
+#include "osal_msg.h"
+#include "osal_clock.h"
 
 /*********************************************************************
  * MACROS

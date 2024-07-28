@@ -1,8 +1,8 @@
 /*
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:57:15 
- * @Last Modified by:   andy.chang 
- * @Last Modified time: 2024-07-28 00:57:15 
+ * @Last Modified by: andy.chang
+ * @Last Modified time: 2024-07-28 13:43:21
  */
 
 /******************************************************************************
@@ -61,12 +61,9 @@
 
 #include <stdlib.h>
 
-#include "comdef.h"
-#include "OSAL.h"
-#include "OSAL_Memory.h"
-#include "OnBoard.h"
-#include "hal_mcu.h"
-#include "hal_assert.h"
+#include "type.h"
+#include "osal.h"
+#include "osal_memory.h"
 
 /* ------------------------------------------------------------------------------------------------
  *                                           Constants

@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:57:54 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 01:00:21
+ * @Last Modified time: 2024-07-28 14:08:39
  */
 
 /******************************************************************************
@@ -56,11 +56,10 @@
  * INCLUDES
  */
 
-#include "comdef.h"
-#include "OnBoard.h"
-#include "OSAL.h"
-#include "OSAL_Timers.h"
-#include "hal_timer.h"
+#include "type.h"
+#include "osal.h"
+#include "osal_tasks.h"
+#include "osal_timers.h"
 
 /*********************************************************************
  * MACROS
