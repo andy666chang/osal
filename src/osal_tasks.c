@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:49:41 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 14:23:52
+ * @Last Modified time: 2024-07-28 21:35:01
  */
 
 /*********************************************************************
@@ -30,6 +30,17 @@
  * TYPEDEFS
  */
 
+/*
+ * OSAL task control block
+ */
+typedef struct osal_tcb {
+  uint8 taskID;
+  uint16 events;
+  // uint8 priority;
+  pTaskEventHandlerFn processor;
+  struct osal_tcb *next;
+} osal_tcb_t;
+
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -47,16 +58,14 @@
  */
 
 // Index of active task
-// TODO: to static
-uint8 activeTaskID = TASK_NO_TASK;
-
-pTaskEventHandlerFn tasksArr[128];
-uint8 tasksCnt;
-uint16 *tasksEvents = NULL;
+static uint8 activeTaskID = TASK_NO_TASK;
+static osal_tcb_t *task_head = NULL;
 
 /*********************************************************************
  * LOCAL FUNCTION PROTOTYPES
  */
+
+static osal_tcb_t *osal_find_task(uint8 task_id);
 
 /*********************************************************************
  * HELPER FUNCTIONS
@@ -85,18 +94,21 @@ uint8 osal_set_event_raw( uint8 task_id, uint16 event_flag )
 uint8 osal_set_event( uint8 task_id, uint16 event_flag )
 #endif /* OSAL_PORT2TIRTOS */
 {
-  if ( task_id < tasksCnt )
+  osal_tcb_t *task = osal_find_task(task_id);
+
+  if (task)
   {
-    halIntState_t   intState;
-    HAL_ENTER_CRITICAL_SECTION(intState);    // Hold off interrupts
-    tasksEvents[task_id] |= event_flag;  // Stuff the event bit(s)
-    HAL_EXIT_CRITICAL_SECTION(intState);     // Release interrupts
-    return ( SUCCESS );
+    halIntState_t intState;
+    HAL_ENTER_CRITICAL_SECTION( intState );  // Hold off interrupts.
+    task->events |= event_flag;
+    HAL_EXIT_CRITICAL_SECTION( intState );   // Re-enable interrupts.
   }
-   else
+  else
   {
-    return ( INVALID_TASK );
+    return (INVALID_TASK);
   }
+
+  return (SUCCESS);
 }
 
 /*********************************************************************
@@ -114,16 +126,163 @@ uint8 osal_set_event( uint8 task_id, uint16 event_flag )
  */
 uint8 osal_clear_event( uint8 task_id, uint16 event_flag )
 {
-  if ( task_id < tasksCnt )
+  osal_tcb_t *task = osal_find_task(task_id);
+
+  if (task)
   {
-    halIntState_t   intState;
-    HAL_ENTER_CRITICAL_SECTION(intState);    // Hold off interrupts
-    tasksEvents[task_id] &= ~(event_flag);   // Clear the event bit(s)
-    HAL_EXIT_CRITICAL_SECTION(intState);     // Release interrupts
-    return ( SUCCESS );
+    halIntState_t intState;
+    HAL_ENTER_CRITICAL_SECTION( intState );  // Hold off interrupts.
+    task->events &= ~event_flag;
+    HAL_EXIT_CRITICAL_SECTION( intState );   // Re-enable interrupts.
   }
-   else
+  else
   {
-    return ( INVALID_TASK );
+    return (INVALID_TASK);
   }
+
+  return (SUCCESS);
+}
+
+/**
+ * @brief 
+ * 
+ */
+void osalInitTasks( void ) {
+  task_head = NULL;
+}
+
+/**
+ * @brief 
+ * 
+ */
+void osal_tasks_process( void ) {
+  // get task_list header
+  osal_tcb_t *task = task_head;
+
+  // polling task with event
+  while (task)
+  {
+    // check events
+    if (task->events)
+    {
+      halIntState_t intState;
+      HAL_ENTER_CRITICAL_SECTION( intState );  // Hold off interrupts.
+
+      // assign activeTaskID
+      activeTaskID = task->taskID;
+
+      // get events
+      uint16 events = task->events;
+      task->events = 0;
+
+      // process task
+      if (task->processor)
+      {
+        task->processor(task->taskID, events);
+      }
+
+      // disable activeTaskID
+      activeTaskID = TASK_NO_TASK;
+
+      HAL_EXIT_CRITICAL_SECTION( intState );   // Re-enable interrupts.
+    }
+    
+    // check next task
+    task = task->next;
+  }
+
+}
+
+/*********************************************************************
+ * @fn      osal_self
+ *
+ * @brief
+ *
+ *   This function returns the task ID of the current (active) task.
+ *
+ * @param   void
+ *
+ * @return   active task ID or TASK_NO_TASK if no task is active
+ */
+uint8 osal_self( void )
+{
+  return ( activeTaskID );
+}
+
+/**
+ * @brief 
+ * 
+ * @param task_id 
+ * @return osal_tcb_t* 
+ */
+static osal_tcb_t *osal_find_task(uint8 task_id) {
+
+  // get task_list header
+  osal_tcb_t *task = task_head;
+
+  // polling task with event
+  while (task)
+  {
+    // check events
+    if (task->taskID == task_id)
+    {
+      return (task);
+    }
+    
+    // check next task
+    task = task->next;
+  }
+
+  return (NULL);
+}
+
+bool osal_task_valid(uint8 task_id) {
+  return (bool)osal_find_task(task_id);
+}
+
+bool osal_task_create(uint8 task_id, pTaskEventHandlerFn precessor) {
+  osal_tcb_t *new_task = NULL;
+
+  // Check param
+  if (osal_task_valid(task_id))
+  {
+    return (INVALID_TASK);
+  }
+
+  if (precessor==NULL)
+  {
+    return (INVALIDPARAMETER);
+  }
+
+  // malloc task memory
+  new_task = osal_mem_alloc(sizeof(osal_tcb_t));
+  if (new_task == NULL)
+  {
+    return (INVALID_MEM_SIZE);
+  }
+
+  // assign task_id & precessor
+  new_task->taskID = task_id;
+  new_task->processor = precessor;
+  new_task->events = 0;
+  new_task->next = NULL;
+
+  // TODO: append to link list(task_head)
+  if (task_head == NULL)
+  {
+    // append first task
+    task_head = new_task;
+  } else {
+    osal_tcb_t *tasks = task_head;
+    // append to task list
+    do {
+      if (tasks->next == NULL)
+      {
+        tasks->next = new_task;
+        break;
+      }
+    } while (1);
+  }
+
+  return (SUCCESS);
 }

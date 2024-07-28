@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-27 23:40:13 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 14:23:29
+ * @Last Modified time: 2024-07-28 20:52:42
  */
 
 /******************************************************************************
@@ -94,27 +94,9 @@ typedef struct
  */
 typedef unsigned short (*pTaskEventHandlerFn)( unsigned char task_id, unsigned short event );
 
-#if 0
-/*
- * OSAL task control block
- */
-typedef struct {
-  uint8 taskID;
-  uint16 events;
-  // uint8 priority;
-  pTaskEventHandlerFn event_process;
-  struct osal_tcb_t *next;
-} osal_tcb_t;
-#endif
-
 /*********************************************************************
  * GLOBAL VARIABLES
  */
-
-extern pTaskEventHandlerFn tasksArr[];
-extern uint8 tasksCnt;
-extern uint16 *tasksEvents;
-// extern osal_tcb_t *tasks;
 
 /*********************************************************************
  * FUNCTIONS
@@ -137,6 +119,21 @@ extern uint16 *tasksEvents;
   * Call each of the tasks initialization functions.
   */
   extern void osalInitTasks( void );
+
+  /*
+  * Process tasks
+  */
+  extern void osal_tasks_process( void );
+
+  /*
+  * Check task exist
+  */
+  extern bool osal_task_valid(uint8 task_id);
+
+  /*
+  * Create task
+  */
+  bool osal_task_create(uint8 task_id, pTaskEventHandlerFn precessor);
 
 #ifdef __cplusplus
 }

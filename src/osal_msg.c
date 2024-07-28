@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:49:38 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 14:02:47
+ * @Last Modified time: 2024-07-28 20:51:29
  */
 
 /*********************************************************************
@@ -36,7 +36,7 @@
  */
 
 // Message Pool Definitions
-osal_msg_q_t osal_qHead;
+static osal_msg_q_t osal_qHead = NULL;
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -205,7 +205,7 @@ static uint8 osal_msg_enqueue_push( uint8 destination_task, uint8 *msg_ptr, uint
     return ( INVALID_MSG_POINTER );
   }
 
-  if ( destination_task >= tasksCnt )
+  if ( !osal_task_valid(destination_task) )
   {
     osal_msg_deallocate( msg_ptr );
     return ( INVALID_TASK );

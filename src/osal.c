@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:48:37 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 14:23:56
+ * @Last Modified time: 2024-07-28 15:05:45
  */
 
 /******************************************************************************
@@ -97,9 +97,6 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
-
- extern uint8 activeTaskID;
- extern osal_msg_q_t osal_qHead;
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -515,9 +512,6 @@ uint8 osal_init_system( void )
   osal_mem_init();
 #endif /* !defined USE_ICALL && !defined OSAL_PORT2TIRTOS */
 
-  // Initialize the message queue
-  osal_qHead = NULL;
-
   // Initialize the timers
   osalTimerInit();
 
@@ -525,7 +519,7 @@ uint8 osal_init_system( void )
   // osal_pwrmgr_init();
 
   // Initialize the system tasks.
-  // osalInitTasks();
+  osalInitTasks();
 
 #if !defined USE_ICALL && !defined OSAL_PORT2TIRTOS
   // Setup efficient search for the first free block of heap.
@@ -553,10 +547,12 @@ void osal_start_system( void )
   for(;;)  // Forever Loop
 #endif
   {
-    osal_run_system();
+    // osal_run_system();
+    osal_tasks_process();
   }
 }
 
+#if 0
 /*********************************************************************
  * @fn      osal_run_system
  *
@@ -617,6 +613,7 @@ void osal_run_system( void )
   }
 #endif
 }
+#endif
 
 /*********************************************************************
  * @fn      osal_buffer_uint32
@@ -694,22 +691,6 @@ uint8 osal_isbufset( uint8 *buf, uint8 val, uint8 len )
     }
   }
   return ( TRUE );
-}
-
-/*********************************************************************
- * @fn      osal_self
- *
- * @brief
- *
- *   This function returns the task ID of the current (active) task.
- *
- * @param   void
- *
- * @return   active task ID or TASK_NO_TASK if no task is active
- */
-uint8 osal_self( void )
-{
-  return ( activeTaskID );
 }
 
 /*********************************************************************
