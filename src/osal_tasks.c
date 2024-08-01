@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-28 00:49:41 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-28 21:35:01
+ * @Last Modified time: 2024-08-02 01:35:28
  */
 
 /*********************************************************************
@@ -267,20 +267,23 @@ bool osal_task_create(uint8 task_id, pTaskEventHandlerFn precessor) {
   new_task->events = 0;
   new_task->next = NULL;
 
-  // TODO: append to link list(task_head)
+  // append to link list(task_head)
   if (task_head == NULL)
   {
     // append first task
     task_head = new_task;
   } else {
     osal_tcb_t *tasks = task_head;
-    // append to task list
+    // search link list
     do {
       if (tasks->next == NULL)
       {
+        // append to tail
         tasks->next = new_task;
         break;
       }
+      // next
+      tasks = tasks->next;
     } while (1);
   }
 
