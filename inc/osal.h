@@ -2,7 +2,7 @@
  * @Author: andy.chang 
  * @Date: 2024-07-27 23:37:20 
  * @Last Modified by: andy.chang
- * @Last Modified time: 2024-07-29 22:07:49
+ * @Last Modified time: 2024-08-02 01:37:49
  */
 
 /******************************************************************************
@@ -87,7 +87,7 @@ extern "C"
 /*** Version ***/
 #define OSAL_VERSION_MAJOR 0
 #define OSAL_VERSION_MINOR 1
-#define OSAL_VERSION_PATCH 0
+#define OSAL_VERSION_PATCH 1
 
 /*** Interrupts ***/
 #define INTS_ALL    0xFF
